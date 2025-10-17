@@ -69,16 +69,26 @@ CREATE POLICY "Users can insert own profile"
   ON public.profiles FOR INSERT
   WITH CHECK (auth.uid() = id);
 
--- Teams policies
+-- ✅ Fix nekonečné rekurze mezi teams a team_members
+CREATE OR REPLACE FUNCTION public.is_team_member(team_id uuid)
+RETURNS boolean
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS(
+    SELECT 1 FROM public.team_members
+    WHERE team_members.team_id = team_id
+      AND team_members.user_id = auth.uid()
+  );
+$$ LANGUAGE sql STABLE;
+
+DROP POLICY IF EXISTS "Team members can view their teams" ON public.teams;
+
 CREATE POLICY "Team members can view their teams"
   ON public.teams FOR SELECT
   USING (
-    owner_id = auth.uid() OR
-    EXISTS (
-      SELECT 1 FROM public.team_members
-      WHERE team_id = teams.id AND user_id = auth.uid()
-    )
+    owner_id = auth.uid() OR public.is_team_member(teams.id)
   );
+
 
 CREATE POLICY "Employers can create teams"
   ON public.teams FOR INSERT

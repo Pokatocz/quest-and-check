@@ -14,16 +14,181 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          completed: boolean | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          photo_url: string | null
+          team_id: string
+          title: string
+          xp: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          photo_url?: string | null
+          team_id: string
+          title: string
+          xp?: number
+        }
+        Update: {
+          assigned_to?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          photo_url?: string | null
+          team_id?: string
+          title?: string
+          xp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          joined_at: string | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string | null
+          id: string
+          join_code: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          join_code: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          join_code?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_join_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "employer" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +315,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["employer", "employee"],
+    },
   },
 } as const

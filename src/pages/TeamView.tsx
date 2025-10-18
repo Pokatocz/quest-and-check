@@ -260,14 +260,14 @@ const TeamView = () => {
                       <div className="space-y-2">
                         <Label htmlFor="assignedTo">Přiřadit zaměstnanci (nepovinné)</Label>
                         <Select
-                          value={newTask.assignedTo}
-                          onValueChange={(value) => setNewTask({ ...newTask, assignedTo: value })}
+                          value={newTask.assignedTo || "unassigned"}
+                          onValueChange={(value) => setNewTask({ ...newTask, assignedTo: value === "unassigned" ? "" : value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Vyberte zaměstnance nebo nechte prázdné" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Všichni zaměstnanci</SelectItem>
+                            <SelectItem value="unassigned">Všichni zaměstnanci</SelectItem>
                             {teamMembers.map((member: any) => (
                               <SelectItem key={member.user_id} value={member.user_id}>
                                 {member.profiles?.full_name || "Neznámý"}

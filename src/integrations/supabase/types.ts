@@ -45,6 +45,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          location: string | null
           photo_url: string | null
           team_id: string
           title: string
@@ -59,6 +60,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          location?: string | null
           photo_url?: string | null
           team_id: string
           title: string
@@ -73,6 +75,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          location?: string | null
           photo_url?: string | null
           team_id?: string
           title?: string
@@ -148,24 +151,33 @@ export type Database = {
       teams: {
         Row: {
           created_at: string | null
+          first_place_reward: number | null
           id: string
           join_code: string
           name: string
           owner_id: string
+          second_place_reward: number | null
+          third_place_reward: number | null
         }
         Insert: {
           created_at?: string | null
+          first_place_reward?: number | null
           id?: string
           join_code: string
           name: string
           owner_id: string
+          second_place_reward?: number | null
+          third_place_reward?: number | null
         }
         Update: {
           created_at?: string | null
+          first_place_reward?: number | null
           id?: string
           join_code?: string
           name?: string
           owner_id?: string
+          second_place_reward?: number | null
+          third_place_reward?: number | null
         }
         Relationships: [
           {

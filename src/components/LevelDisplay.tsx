@@ -20,20 +20,20 @@ export const LevelDisplay = ({ level, currentXP, xpForNextLevel }: LevelDisplayP
           <div>
             <h2 className="text-2xl font-bold">Úroveň {level}</h2>
             <p className="text-sm text-muted-foreground">
-              {currentXP} / {xpForNextLevel} XP
+              {currentXP} / {xpForNextLevel} Kč
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg border border-primary/20">
           <Zap className="w-5 h-5 text-primary" />
-          <span className="font-semibold text-primary">{currentXP} XP</span>
+          <span className="font-semibold text-primary">{currentXP} Kč</span>
         </div>
       </div>
       
       <div className="space-y-2">
         <Progress value={progress} className="h-3 bg-muted" />
         <p className="text-xs text-muted-foreground text-right">
-          {xpForNextLevel - currentXP} XP do další úrovně
+          {xpForNextLevel - currentXP} Kč do další úrovně
         </p>
       </div>
     </div>

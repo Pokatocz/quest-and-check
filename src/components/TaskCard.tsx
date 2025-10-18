@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, Star, Upload, Image as ImageIcon } from "lucide-react";
+import { CheckCircle2, Circle, Star, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,11 +14,15 @@ interface TaskCardProps {
   xp: number;
   completed: boolean;
   photoUrl?: string | null;
+  location?: string | null;
+  assignedTo?: string | null;
   canComplete: boolean;
+  canDelete?: boolean;
   onComplete: (photoUrl: string) => void;
+  onDelete?: () => void;
 }
 
-export const TaskCard = ({ id, title, description, xp, completed, photoUrl, canComplete, onComplete }: TaskCardProps) => {
+export const TaskCard = ({ id, title, description, xp, completed, photoUrl, location, assignedTo, canComplete, canDelete, onComplete, onDelete }: TaskCardProps) => {
   const [uploading, setUploading] = useState(false);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,12 +75,15 @@ export const TaskCard = ({ id, title, description, xp, completed, photoUrl, canC
           )}>
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground mb-3">{description}</p>
+          <p className="text-sm text-muted-foreground mb-2">{description}</p>
+          {location && (
+            <p className="text-xs text-muted-foreground mb-3">📍 {location}</p>
+          )}
           
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="gradient-primary">
               <Star className="w-3 h-3 mr-1" />
-              {xp} XP
+              {xp} Kč
             </Badge>
 
             {canComplete && !completed && (
@@ -111,6 +118,17 @@ export const TaskCard = ({ id, title, description, xp, completed, photoUrl, canC
                 <ImageIcon className="w-3 h-3" />
                 Zobrazit foto
               </a>
+            )}
+
+            {canDelete && onDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onDelete}
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Smazat
+              </Button>
             )}
           </div>
         </div>

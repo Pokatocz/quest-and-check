@@ -190,6 +190,14 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_team_member: {
+        Args: { _team_id: string }
+        Returns: boolean
+      }
+      is_team_owner: {
+        Args: { _team_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "employer" | "employee"

@@ -7,6 +7,7 @@ import { LevelDisplay } from "@/components/LevelDisplay";
 import { StatsCard } from "@/components/StatsCard";
 import { Leaderboard } from "@/components/Leaderboard";
 import { TeamSettings } from "@/components/TeamSettings";
+import { TeamMembersManager } from "@/components/TeamMembersManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Target, TrendingUp, CheckCircle, Plus, ArrowLeft, Settings, Trophy, ListTodo } from "lucide-react";
+import { Target, TrendingUp, CheckCircle, Plus, ArrowLeft, Settings, Trophy, ListTodo, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const TeamView = () => {
@@ -24,6 +25,7 @@ const TeamView = () => {
   const [team, setTeam] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string>("employee");
   const [userStats, setUserStats] = useState({ level: 1, xp: 0 });
   const [newTask, setNewTask] = useState({ 
     title: "", 
@@ -39,6 +41,7 @@ const TeamView = () => {
       fetchTeamData();
       fetchTasks();
       fetchTeamMembers();
+      fetchUserRole();
     }
   }, [teamId, user]);
 
@@ -56,11 +59,30 @@ const TeamView = () => {
     setTeam(data);
   };
 
+  const fetchUserRole = async () => {
+    if (team?.owner_id === user?.id) {
+      setUserRole("owner");
+      return;
+    }
+
+    const { data } = await supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", teamId)
+      .eq("user_id", user?.id)
+      .single();
+
+    if (data) {
+      setUserRole(data.role || "employee");
+    }
+  };
+
   const fetchTeamMembers = async () => {
     const { data, error } = await supabase
       .from("team_members")
       .select(`
         user_id,
+        role,
         profiles:user_id (
           id,
           full_name
@@ -88,8 +110,12 @@ const TeamView = () => {
     }
     setTasks(data || []);
     
-    // Calculate user stats
-    const completedTasks = data?.filter(t => t.completed && t.completed_by === user?.id) || [];
+    // Calculate user stats - only count approved tasks
+    const completedTasks = data?.filter(t => 
+      t.completed && 
+      t.completed_by === user?.id && 
+      t.approval_status === 'approved'
+    ) || [];
     const totalXp = completedTasks.reduce((sum, t) => sum + t.xp, 0);
     const level = Math.floor(totalXp / 100) + 1;
     setUserStats({ level, xp: totalXp });
@@ -138,6 +164,42 @@ const TeamView = () => {
     }
 
     fetchTasks();
+  };
+
+  const handleApproveTask = async (taskId: string, approved: boolean) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        approval_status: approved ? 'approved' : 'rejected',
+      })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Chyba při schvalování úkolu");
+      return;
+    }
+
+    toast.success(approved ? "Úkol schválen!" : "Úkol zamítnut");
+    fetchTasks();
+  };
+
+  const handleToggleManager = async (memberId: string, currentRole: string) => {
+    const newRole = currentRole === 'manager' ? 'employee' : 'manager';
+    
+    const { error } = await supabase
+      .from("team_members")
+      .update({ role: newRole })
+      .eq("team_id", teamId)
+      .eq("user_id", memberId);
+
+    if (error) {
+      toast.error("Chyba při změně role");
+      return;
+    }
+
+    toast.success(newRole === 'manager' ? "Zaměstnanec povýšen na správce" : "Správce odvolán");
+    fetchTeamMembers();
+    fetchUserRole();
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -200,7 +262,7 @@ const TeamView = () => {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
@@ -209,6 +271,12 @@ const TeamView = () => {
               <Trophy className="w-4 h-4 mr-2" />
               Žebříček
             </TabsTrigger>
+            {(profile?.role === "employer" || userRole === "owner") && (
+              <TabsTrigger value="members">
+                <Users className="w-4 h-4 mr-2" />
+                Členové
+              </TabsTrigger>
+            )}
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
               Nastavení
@@ -308,10 +376,13 @@ const TeamView = () => {
                   photoUrl={task.photo_url}
                   location={task.location}
                   assignedTo={task.assigned_to}
+                  approvalStatus={task.approval_status}
                   canComplete={profile?.role === "employee" && !task.completed}
-                  canDelete={profile?.role === "employer"}
+                  canDelete={profile?.role === "employer" || userRole === "owner" || userRole === "manager"}
+                  canApprove={(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && task.completed}
                   onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
                   onDelete={() => handleDeleteTask(task.id)}
+                  onApprove={handleApproveTask}
                 />
               ))}
 
@@ -326,6 +397,17 @@ const TeamView = () => {
           <TabsContent value="leaderboard" className="mt-6">
             <Leaderboard teamId={teamId!} />
           </TabsContent>
+
+          {(profile?.role === "employer" || userRole === "owner") && (
+            <TabsContent value="members" className="mt-6">
+              <TeamMembersManager
+                members={teamMembers}
+                isOwner={userRole === "owner"}
+                currentUserId={user?.id}
+                onToggleManager={handleToggleManager}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="settings" className="mt-6">
             <TeamSettings

@@ -37,6 +37,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          approval_status: string | null
           assigned_to: string | null
           completed: boolean | null
           completed_at: string | null
@@ -52,6 +53,7 @@ export type Database = {
           xp: number
         }
         Insert: {
+          approval_status?: string | null
           assigned_to?: string | null
           completed?: boolean | null
           completed_at?: string | null
@@ -67,6 +69,7 @@ export type Database = {
           xp?: number
         }
         Update: {
+          approval_status?: string | null
           assigned_to?: string | null
           completed?: boolean | null
           completed_at?: string | null
@@ -116,18 +119,21 @@ export type Database = {
         Row: {
           id: string
           joined_at: string | null
+          role: string | null
           team_id: string
           user_id: string
         }
         Insert: {
           id?: string
           joined_at?: string | null
+          role?: string | null
           team_id: string
           user_id: string
         }
         Update: {
           id?: string
           joined_at?: string | null
+          role?: string | null
           team_id?: string
           user_id?: string
         }

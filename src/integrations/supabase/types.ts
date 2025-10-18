@@ -186,6 +186,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_employer: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "employer" | "employee"

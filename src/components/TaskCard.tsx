@@ -37,50 +37,74 @@ export const TaskCard = ({
   approvalStatus, canComplete, canDelete, canApprove, onComplete, onDelete, onApprove 
 }: TaskCardProps) => {
   const [uploading, setUploading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    setPendingFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewImage(reader.result as string);
-      setShowPreview(true);
-    };
-    reader.readAsDataURL(file);
+    const newFiles = [...pendingFiles, ...files];
+    setPendingFiles(newFiles);
+
+    // Create previews for all files
+    const newPreviews: string[] = [];
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === files.length) {
+          setPreviewImages([...previewImages, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const handleConfirmUpload = async () => {
-    if (!pendingFile) return;
+  const handleRemovePhoto = (index: number) => {
+    setPendingFiles(pendingFiles.filter((_, i) => i !== index));
+    setPreviewImages(previewImages.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (pendingFiles.length < 3) {
+      toast.error("Nahrajte minimálně 3 fotky");
+      return;
+    }
 
     setUploading(true);
     try {
-      const fileExt = pendingFile.name.split(".").pop();
-      const fileName = `${id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const uploadedUrls: string[] = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from("task-photos")
-        .upload(filePath, pendingFile);
+      // Upload all photos
+      for (const file of pendingFiles) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${id}-${Date.now()}-${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from("task-photos")
+          .upload(filePath, file);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("task-photos")
-        .getPublicUrl(filePath);
+        if (uploadError) throw uploadError;
 
-      onComplete(publicUrl);
-      toast.success("Fotka nahrána! Čeká na schválení zaměstnavatelem.");
-      setShowPreview(false);
-      setPreviewImage(null);
-      setPendingFile(null);
+        const { data: { publicUrl } } = supabase.storage
+          .from("task-photos")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      // Use the first photo URL for the task
+      onComplete(uploadedUrls[0]);
+      toast.success("Fotky nahrány! Úkol čeká na schválení zaměstnavatelem.");
+      setShowUploadDialog(false);
+      setPreviewImages([]);
+      setPendingFiles([]);
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Chyba při nahrávání fotky");
+      toast.error("Chyba při nahrávání fotek");
     } finally {
       setUploading(false);
     }
@@ -137,25 +161,15 @@ export const TaskCard = ({
               {getStatusBadge()}
 
               {canComplete && !completed && (
-                <label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    disabled={uploading}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={uploading}
-                    onClick={() => document.querySelector<HTMLInputElement>(`input[type="file"]`)?.click()}
-                    className="cursor-pointer"
-                  >
-                    <Upload className="w-3 h-3 mr-1" />
-                    {uploading ? "Nahrávání..." : "Nahrát foto"}
-                  </Button>
-                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setShowUploadDialog(true)}
+                  className="cursor-pointer"
+                >
+                  <Upload className="w-3 h-3 mr-1" />
+                  Dokončit úkol
+                </Button>
               )}
 
               {photoUrl && (
@@ -207,40 +221,84 @@ export const TaskCard = ({
         </div>
       </Card>
 
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent>
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Náhled fotky před odesláním</DialogTitle>
+            <DialogTitle>Dokončení úkolu - Nahrajte fotky</DialogTitle>
           </DialogHeader>
-          {previewImage && (
-            <div className="space-y-4">
-              <img 
-                src={previewImage} 
-                alt="Náhled" 
-                className="w-full rounded-lg"
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                disabled={uploading}
+                className="hidden"
+                id={`file-upload-${id}`}
               />
-              <p className="text-sm text-muted-foreground">
-                Zkontrolujte, zda je fotka správná. Po odeslání bude čekat na schválení zaměstnavatelem.
-              </p>
+              <label htmlFor={`file-upload-${id}`} className="cursor-pointer">
+                <Upload className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium">
+                  Klikněte pro nahrání fotek
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Minimálně 3 fotky jsou vyžadovány
+                </p>
+              </label>
             </div>
-          )}
+
+            {previewImages.length > 0 && (
+              <div>
+                <p className="text-sm font-medium mb-2">
+                  Nahrané fotky ({previewImages.length}/min. 3)
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {previewImages.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={preview} 
+                        alt={`Náhled ${index + 1}`} 
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleRemovePhoto(index)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {pendingFiles.length < 3 && (
+              <p className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg">
+                ⚠️ Nahrajte ještě {3 - pendingFiles.length} {pendingFiles.length === 2 ? 'fotku' : 'fotky'}
+              </p>
+            )}
+          </div>
           <DialogFooter>
             <Button 
               variant="outline" 
               onClick={() => {
-                setShowPreview(false);
-                setPreviewImage(null);
-                setPendingFile(null);
+                setShowUploadDialog(false);
+                setPreviewImages([]);
+                setPendingFiles([]);
               }}
+              disabled={uploading}
             >
               Zrušit
             </Button>
             <Button 
-              onClick={handleConfirmUpload}
-              disabled={uploading}
+              onClick={handleSubmitForApproval}
+              disabled={uploading || pendingFiles.length < 3}
               className="gradient-primary"
             >
-              {uploading ? "Nahrávání..." : "Odeslat fotku"}
+              {uploading ? "Odesílání..." : "Odeslat ke schválení"}
             </Button>
           </DialogFooter>
         </DialogContent>

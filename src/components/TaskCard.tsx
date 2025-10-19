@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, Star, Upload, Image as ImageIcon, Trash2, Check, X } from "lucide-react";
+import { CheckCircle2, Circle, Star, Upload, Image as ImageIcon, Trash2, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -40,6 +40,17 @@ export const TaskCard = ({
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Parse photo URLs from JSON string
+  const photoUrls = photoUrl ? (() => {
+    try {
+      return JSON.parse(photoUrl);
+    } catch {
+      return [photoUrl]; // Fallback for old single URL format
+    }
+  })() : [];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -96,8 +107,8 @@ export const TaskCard = ({
         uploadedUrls.push(publicUrl);
       }
 
-      // Use the first photo URL for the task
-      onComplete(uploadedUrls[0]);
+      // Save all URLs as JSON array
+      onComplete(JSON.stringify(uploadedUrls));
       toast.success("Fotky nahrány! Úkol čeká na schválení zaměstnavatelem.");
       setShowUploadDialog(false);
       setPreviewImages([]);
@@ -172,16 +183,18 @@ export const TaskCard = ({
                 </Button>
               )}
 
-              {photoUrl && (
-                <a
-                  href={photoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+              {photoUrls.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentPhotoIndex(0);
+                    setShowGallery(true);
+                  }}
                 >
-                  <ImageIcon className="w-3 h-3" />
-                  Zobrazit foto
-                </a>
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                  Zobrazit fotky ({photoUrls.length})
+                </Button>
               )}
 
               {canApprove && completed && approvalStatus === 'pending' && onApprove && (
@@ -220,6 +233,68 @@ export const TaskCard = ({
           </div>
         </div>
       </Card>
+
+      <Dialog open={showGallery} onOpenChange={setShowGallery}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Fotky z dokončení úkolu</DialogTitle>
+          </DialogHeader>
+          {photoUrls.length > 0 && (
+            <div className="space-y-4">
+              <div className="relative">
+                <img 
+                  src={photoUrls[currentPhotoIndex]} 
+                  alt={`Fotka ${currentPhotoIndex + 1}`} 
+                  className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+                />
+                {photoUrls.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-2 top-1/2 -translate-y-1/2"
+                      onClick={() => setCurrentPhotoIndex((prev) => (prev - 1 + photoUrls.length) % photoUrls.length)}
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      onClick={() => setCurrentPhotoIndex((prev) => (prev + 1) % photoUrls.length)}
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                  </>
+                )}
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                Fotka {currentPhotoIndex + 1} z {photoUrls.length}
+              </div>
+              {photoUrls.length > 1 && (
+                <div className="flex gap-2 justify-center overflow-x-auto pb-2">
+                  {photoUrls.map((url: string, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentPhotoIndex(index)}
+                      className={cn(
+                        "flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                        currentPhotoIndex === index ? "border-primary scale-110" : "border-border opacity-60 hover:opacity-100"
+                      )}
+                    >
+                      <img 
+                        src={url} 
+                        alt={`Miniatura ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

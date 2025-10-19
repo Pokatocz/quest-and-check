@@ -288,7 +288,7 @@ const TeamView = () => {
           <TabsContent value="tasks" className="space-y-4 mt-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Úkoly týmu</h2>
-              {profile?.role === "employer" && (
+              {(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && (
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="gradient-primary">

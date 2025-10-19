@@ -43,14 +43,18 @@ export const TaskCard = ({
   const [showGallery, setShowGallery] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-  // Parse photo URLs from JSON string
-  const photoUrls = photoUrl ? (() => {
+  // Parse photo URLs - handle both JSON array and single URL string
+  const photoUrls: string[] = photoUrl ? (() => {
     try {
-      return JSON.parse(photoUrl);
+      const parsed = JSON.parse(photoUrl);
+      return Array.isArray(parsed) ? parsed : [photoUrl];
     } catch {
-      return [photoUrl]; // Fallback for old single URL format
+      return [photoUrl];
     }
   })() : [];
+
+  console.log("Photo URL from DB:", photoUrl);
+  console.log("Parsed photo URLs:", photoUrls);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -108,7 +112,10 @@ export const TaskCard = ({
       }
 
       // Save all URLs as JSON array
-      onComplete(JSON.stringify(uploadedUrls));
+      const photosJson = JSON.stringify(uploadedUrls);
+      console.log("Saving photos as JSON:", photosJson);
+      console.log("Uploaded URLs:", uploadedUrls);
+      onComplete(photosJson);
       toast.success("Fotky nahrány! Úkol čeká na schválení zaměstnavatelem.");
       setShowUploadDialog(false);
       setPreviewImages([]);

@@ -244,7 +244,7 @@ const TeamView = () => {
           />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StatsCard
             title="Aktivní úkoly"
             value={totalTasks - completedTasks}
@@ -256,10 +256,18 @@ const TeamView = () => {
             value={completedTasks}
             icon={CheckCircle}
           />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StatsCard
             title="Úspěšnost"
             value={`${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%`}
             icon={TrendingUp}
+          />
+          <StatsCard
+            title="Celkem odměn"
+            value={`${userStats.xp} Kč`}
+            icon={Trophy}
           />
         </div>
 

@@ -236,11 +236,13 @@ const TeamView = () => {
           <h1 className="text-3xl font-bold">{team?.name}</h1>
         </div>
 
-        <LevelDisplay
-          level={userStats.level}
-          currentXP={userStats.xp % xpForNextLevel}
-          xpForNextLevel={xpForNextLevel}
-        />
+        {profile?.role === "employee" && (
+          <LevelDisplay
+            level={userStats.level}
+            currentXP={userStats.xp}
+            xpForNextLevel={xpForNextLevel}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatsCard

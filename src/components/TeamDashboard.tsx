@@ -81,22 +81,15 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
 
     setLoading(true);
     try {
-      const { data: team, error: teamError } = await supabase
-        .from("teams")
-        .select("id")
-        .eq("join_code", joinCode.toUpperCase())
-        .single();
+      const { data, error } = await supabase.rpc('join_team_by_code', {
+        _join_code: joinCode.toUpperCase()
+      });
 
-      if (teamError) throw new Error("Neplatný kód týmu");
+      const result = data as { success: boolean; message: string } | null;
 
-      const { error: memberError } = await supabase
-        .from("team_members")
-        .insert({
-          team_id: team.id,
-          user_id: user?.id,
-        });
-
-      if (memberError) throw memberError;
+      if (error || !result?.success) {
+        throw new Error(result?.message || "Nepodařilo se připojit k týmu");
+      }
 
       toast.success("Úspěšně jste se připojili k týmu!");
       setJoinCode("");

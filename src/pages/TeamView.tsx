@@ -282,17 +282,28 @@ const TeamView = () => {
           </TabsList>
 
           <TabsContent value="tasks" className="space-y-4 mt-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Úkoly týmu</h2>
-              {(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="gradient-primary">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nový úkol
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <Tabs defaultValue="active" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="active">
+                  Aktivní úkoly
+                </TabsTrigger>
+                <TabsTrigger value="completed">
+                  Dokončené úkoly
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="active" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Aktivní úkoly</h2>
+                  {(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && (
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="gradient-primary">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nový úkol
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Vytvořit nový úkol</DialogTitle>
                     </DialogHeader>
@@ -357,39 +368,77 @@ const TeamView = () => {
                         Vytvořit úkol
                       </Button>
                     </form>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {tasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  id={task.id}
-                  title={task.title}
-                  description={task.description}
-                  xp={task.xp}
-                  completed={task.completed}
-                  photoUrl={task.photo_url}
-                  location={task.location}
-                  assignedTo={task.assigned_to}
-                  approvalStatus={task.approval_status}
-                  canComplete={profile?.role === "employee" && !task.completed}
-                  canDelete={profile?.role === "employer" || userRole === "owner" || userRole === "manager"}
-                  canApprove={(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && task.completed}
-                  onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
-                  onDelete={() => handleDeleteTask(task.id)}
-                  onApprove={handleApproveTask}
-                />
-              ))}
-
-              {tasks.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  Zatím žádné úkoly. {profile?.role === "employer" && "Vytvořte první!"}
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
-              )}
-            </div>
+
+                <div className="space-y-4">
+                  {tasks
+                    .filter(task => !task.completed || task.approval_status === 'pending' || task.approval_status === 'rejected')
+                    .map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        id={task.id}
+                        title={task.title}
+                        description={task.description}
+                        xp={task.xp}
+                        completed={task.completed}
+                        photoUrl={task.photo_url}
+                        location={task.location}
+                        assignedTo={task.assigned_to}
+                        approvalStatus={task.approval_status}
+                        canComplete={profile?.role === "employee" && !task.completed}
+                        canDelete={profile?.role === "employer" || userRole === "owner" || userRole === "manager"}
+                        canApprove={(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && task.completed}
+                        onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
+                        onDelete={() => handleDeleteTask(task.id)}
+                        onApprove={handleApproveTask}
+                      />
+                    ))}
+
+                  {tasks.filter(task => !task.completed || task.approval_status === 'pending' || task.approval_status === 'rejected').length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                      Žádné aktivní úkoly. {(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && "Vytvořte první!"}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="completed" className="space-y-4 mt-4">
+                <h2 className="text-xl font-semibold">Dokončené úkoly</h2>
+                <div className="space-y-4">
+                  {tasks
+                    .filter(task => task.completed && task.approval_status === 'approved')
+                    .map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        id={task.id}
+                        title={task.title}
+                        description={task.description}
+                        xp={task.xp}
+                        completed={task.completed}
+                        photoUrl={task.photo_url}
+                        location={task.location}
+                        assignedTo={task.assigned_to}
+                        approvalStatus={task.approval_status}
+                        canComplete={false}
+                        canDelete={profile?.role === "employer" || userRole === "owner" || userRole === "manager"}
+                        canApprove={false}
+                        onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
+                        onDelete={() => handleDeleteTask(task.id)}
+                        onApprove={handleApproveTask}
+                      />
+                    ))}
+
+                  {tasks.filter(task => task.completed && task.approval_status === 'approved').length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                      Zatím žádné dokončené úkoly.
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
 

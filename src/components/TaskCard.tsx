@@ -60,17 +60,18 @@ export const TaskCard = ({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const newFiles = [...pendingFiles, ...files];
-    setPendingFiles(newFiles);
+    setPendingFiles((prev) => [...prev, ...files]);
 
-    // Create previews for all files
+    // Create previews for all files with functional state update
     const newPreviews: string[] = [];
-    files.forEach(file => {
+    let loaded = 0;
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
+        loaded += 1;
         newPreviews.push(reader.result as string);
-        if (newPreviews.length === files.length) {
-          setPreviewImages([...previewImages, ...newPreviews]);
+        if (loaded === files.length) {
+          setPreviewImages((prev) => [...prev, ...newPreviews]);
         }
       };
       reader.readAsDataURL(file);

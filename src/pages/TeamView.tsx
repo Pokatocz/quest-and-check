@@ -244,7 +244,7 @@ const TeamView = () => {
           />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatsCard
             title="Aktivní úkoly"
             value={totalTasks - completedTasks}
@@ -256,14 +256,6 @@ const TeamView = () => {
             value={completedTasks}
             icon={CheckCircle}
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StatsCard
-            title="Úspěšnost"
-            value={`${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%`}
-            icon={TrendingUp}
-          />
           <StatsCard
             title="Celkem odměn"
             value={`${userStats.xp} Kč`}
@@ -272,14 +264,10 @@ const TeamView = () => {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="tasks">
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
-            </TabsTrigger>
-            <TabsTrigger value="leaderboard">
-              <Trophy className="w-4 h-4 mr-2" />
-              Žebříček
             </TabsTrigger>
             {(profile?.role === "employer" || userRole === "owner") && (
               <TabsTrigger value="members">
@@ -404,9 +392,6 @@ const TeamView = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="leaderboard" className="mt-6">
-            <Leaderboard teamId={teamId!} />
-          </TabsContent>
 
           {(profile?.role === "employer" || userRole === "owner") && (
             <TabsContent value="members" className="mt-6">

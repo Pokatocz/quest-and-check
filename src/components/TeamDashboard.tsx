@@ -34,13 +34,35 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
         if (error) throw error;
         setTeams(data || []);
       } else {
-        const { data: memberships, error } = await supabase
+        // First get team member records
+        const { data: memberships, error: memberError } = await supabase
           .from("team_members")
-          .select("team_id, teams(*)")
+          .select("team_id")
           .eq("user_id", user?.id);
         
-        if (error) throw error;
-        setTeams(memberships?.map(m => m.teams).filter(Boolean) || []);
+        if (memberError) {
+          console.error("Error fetching memberships:", memberError);
+          throw memberError;
+        }
+
+        if (!memberships || memberships.length === 0) {
+          setTeams([]);
+          return;
+        }
+
+        // Then get the actual team data
+        const teamIds = memberships.map(m => m.team_id);
+        const { data: teamsData, error: teamsError } = await supabase
+          .from("teams")
+          .select("*")
+          .in("id", teamIds);
+        
+        if (teamsError) {
+          console.error("Error fetching teams:", teamsError);
+          throw teamsError;
+        }
+        
+        setTeams(teamsData || []);
       }
     } catch (error) {
       console.error("Error fetching teams:", error);

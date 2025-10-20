@@ -42,9 +42,11 @@ export const TaskCard = ({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [signedUrls, setSignedUrls] = useState<string[]>([]);
+  const [loadingUrls, setLoadingUrls] = useState(false);
 
-  // Parse photo URLs - handle both JSON array and single URL string
-  const photoUrls: string[] = photoUrl ? (() => {
+  // Parse photo paths/URLs - handle both JSON array and single path/URL string
+  const photoPaths: string[] = photoUrl ? (() => {
     try {
       const parsed = JSON.parse(photoUrl);
       return Array.isArray(parsed) ? parsed : [photoUrl];
@@ -53,8 +55,43 @@ export const TaskCard = ({
     }
   })() : [];
 
-  console.log("Photo URL from DB:", photoUrl);
-  console.log("Parsed photo URLs:", photoUrls);
+  console.log("Photo data from DB:", photoUrl);
+  console.log("Parsed photo paths:", photoPaths);
+
+  // Generate signed URLs for viewing photos
+  const generateSignedUrls = async () => {
+    if (photoPaths.length === 0 || loadingUrls) return;
+    
+    setLoadingUrls(true);
+    try {
+      const urls: string[] = [];
+      
+      for (const path of photoPaths) {
+        // Check if it's already a full URL (legacy data) or a path
+        if (path.startsWith('http')) {
+          urls.push(path);
+        } else {
+          // Generate signed URL with 1 hour expiration
+          const { data, error } = await supabase.storage
+            .from('task-photos')
+            .createSignedUrl(path, 3600);
+          
+          if (error) {
+            console.error('Error generating signed URL:', error);
+            urls.push(''); // Placeholder for failed URL
+          } else {
+            urls.push(data.signedUrl);
+          }
+        }
+      }
+      
+      setSignedUrls(urls);
+    } catch (error) {
+      console.error('Error generating signed URLs:', error);
+    } finally {
+      setLoadingUrls(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -91,9 +128,9 @@ export const TaskCard = ({
 
     setUploading(true);
     try {
-      const uploadedUrls: string[] = [];
+      const uploadedPaths: string[] = [];
 
-      // Upload all photos
+      // Upload all photos and store paths (not URLs)
       for (const file of pendingFiles) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${id}-${Date.now()}-${Math.random()}.${fileExt}`;
@@ -105,17 +142,13 @@ export const TaskCard = ({
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from("task-photos")
-          .getPublicUrl(filePath);
-
-        uploadedUrls.push(publicUrl);
+        // Store file path instead of URL for better security
+        uploadedPaths.push(filePath);
       }
 
-      // Save all URLs as JSON array
-      const photosJson = JSON.stringify(uploadedUrls);
-      console.log("Saving photos as JSON:", photosJson);
-      console.log("Uploaded URLs:", uploadedUrls);
+      // Save all paths as JSON array
+      const photosJson = JSON.stringify(uploadedPaths);
+      console.log("Saving photo paths as JSON:", photosJson);
       onComplete(photosJson);
       toast.success("Fotky nahrány! Úkol čeká na schválení zaměstnavatelem.");
       setShowUploadDialog(false);
@@ -191,17 +224,18 @@ export const TaskCard = ({
                 </Button>
               )}
 
-              {photoUrls.length > 0 && (
+              {photoPaths.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
+                  onClick={async () => {
                     setCurrentPhotoIndex(0);
+                    await generateSignedUrls();
                     setShowGallery(true);
                   }}
                 >
                   <ImageIcon className="w-3 h-3 mr-1" />
-                  Zobrazit fotky ({photoUrls.length})
+                  Zobrazit fotky ({photoPaths.length})
                 </Button>
               )}
 
@@ -247,21 +281,25 @@ export const TaskCard = ({
           <DialogHeader>
             <DialogTitle>Fotky z dokončení úkolu</DialogTitle>
           </DialogHeader>
-          {photoUrls.length > 0 && (
+          {loadingUrls ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">Načítání fotek...</p>
+            </div>
+          ) : signedUrls.length > 0 ? (
             <div className="space-y-4">
               <div className="relative">
                 <img 
-                  src={photoUrls[currentPhotoIndex]} 
+                  src={signedUrls[currentPhotoIndex]} 
                   alt={`Fotka ${currentPhotoIndex + 1}`} 
                   className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
                 />
-                {photoUrls.length > 1 && (
+                {signedUrls.length > 1 && (
                   <>
                     <Button
                       variant="secondary"
                       size="icon"
                       className="absolute left-2 top-1/2 -translate-y-1/2"
-                      onClick={() => setCurrentPhotoIndex((prev) => (prev - 1 + photoUrls.length) % photoUrls.length)}
+                      onClick={() => setCurrentPhotoIndex((prev) => (prev - 1 + signedUrls.length) % signedUrls.length)}
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </Button>
@@ -269,7 +307,7 @@ export const TaskCard = ({
                       variant="secondary"
                       size="icon"
                       className="absolute right-2 top-1/2 -translate-y-1/2"
-                      onClick={() => setCurrentPhotoIndex((prev) => (prev + 1) % photoUrls.length)}
+                      onClick={() => setCurrentPhotoIndex((prev) => (prev + 1) % signedUrls.length)}
                     >
                       <ChevronRight className="w-6 h-6" />
                     </Button>
@@ -277,11 +315,11 @@ export const TaskCard = ({
                 )}
               </div>
               <div className="text-center text-sm text-muted-foreground">
-                Fotka {currentPhotoIndex + 1} z {photoUrls.length}
+                Fotka {currentPhotoIndex + 1} z {signedUrls.length}
               </div>
-              {photoUrls.length > 1 && (
+              {signedUrls.length > 1 && (
                 <div className="flex gap-2 justify-center overflow-x-auto pb-2">
-                  {photoUrls.map((url: string, index: number) => (
+                  {signedUrls.map((url: string, index: number) => (
                     <button
                       key={index}
                       onClick={() => setCurrentPhotoIndex(index)}
@@ -299,6 +337,10 @@ export const TaskCard = ({
                   ))}
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">Žádné fotky k zobrazení</p>
             </div>
           )}
         </DialogContent>

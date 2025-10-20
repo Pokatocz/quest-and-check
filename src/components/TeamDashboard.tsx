@@ -10,7 +10,7 @@ import { Users, Plus, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string) => void }) => {
-  const { profile, user } = useAuth();
+  const { userRole, user } = useAuth();
   const [teams, setTeams] = useState<any[]>([]);
   const [teamName, setTeamName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -25,7 +25,7 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
 
   const fetchTeams = async () => {
     try {
-      if (profile?.role === "employer") {
+      if (userRole === "employer") {
         const { data, error } = await supabase
           .from("teams")
           .select("*")
@@ -135,13 +135,13 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
       <div>
         <h2 className="text-2xl font-bold mb-2">Vaše týmy</h2>
         <p className="text-muted-foreground">
-          {profile?.role === "employer"
+          {userRole === "employer"
             ? "Vytvořte tým a sdílejte kód s vašimi zaměstnanci"
             : "Připojte se k týmu pomocí kódu od zaměstnavatele"}
         </p>
       </div>
 
-      {profile?.role === "employer" ? (
+      {userRole === "employer" ? (
         <Card className="p-6">
           <form onSubmit={createTeam} className="space-y-4">
             <div className="space-y-2">
@@ -197,7 +197,7 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
                 </div>
                 <div>
                   <h3 className="font-semibold">{team.name}</h3>
-                  {profile?.role === "employer" && (
+                  {userRole === "employer" && (
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="secondary" className="text-xs">
                         {team.join_code}
@@ -225,7 +225,7 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
 
         {teams.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            {profile?.role === "employer"
+            {userRole === "employer"
               ? "Zatím nemáte žádný tým. Vytvořte první!"
               : "Nejste členem žádného týmu. Připojte se pomocí kódu!"}
           </div>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Sparkles } from "lucide-react";
 
 const Index = () => {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, userRole, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

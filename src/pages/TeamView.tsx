@@ -20,7 +20,7 @@ import { toast } from "sonner";
 
 const TeamView = () => {
   const { teamId } = useParams();
-  const { user, profile } = useAuth();
+  const { user, userRole: globalUserRole } = useAuth();
   const navigate = useNavigate();
   const [team, setTeam] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -236,7 +236,7 @@ const TeamView = () => {
           <h1 className="text-3xl font-bold">{team?.name}</h1>
         </div>
 
-        {profile?.role === "employee" && (
+        {globalUserRole === "employee" && (
           <LevelDisplay
             level={userStats.level}
             currentXP={userStats.xp}
@@ -269,7 +269,7 @@ const TeamView = () => {
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
             </TabsTrigger>
-            {(profile?.role === "employer" || userRole === "owner") && (
+            {(globalUserRole === "employer" || userRole === "owner") && (
               <TabsTrigger value="members">
                 <Users className="w-4 h-4 mr-2" />
                 Členové
@@ -295,7 +295,7 @@ const TeamView = () => {
               <TabsContent value="active" className="space-y-4 mt-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Aktivní úkoly</h2>
-                  {(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && (
+                  {(globalUserRole === "employer" || userRole === "owner" || userRole === "manager") && (
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                       <DialogTrigger asChild>
                         <Button className="gradient-primary">
@@ -388,9 +388,9 @@ const TeamView = () => {
                         location={task.location}
                         assignedTo={task.assigned_to}
                         approvalStatus={task.approval_status}
-                        canComplete={profile?.role === "employee" && !task.completed}
-                        canDelete={profile?.role === "employer" || userRole === "owner" || userRole === "manager"}
-                        canApprove={(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && task.completed}
+                        canComplete={globalUserRole === "employee" && !task.completed}
+                        canDelete={globalUserRole === "employer" || userRole === "owner" || userRole === "manager"}
+                        canApprove={(globalUserRole === "employer" || userRole === "owner" || userRole === "manager") && task.completed}
                         onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
                         onDelete={() => handleDeleteTask(task.id)}
                         onApprove={handleApproveTask}
@@ -399,7 +399,7 @@ const TeamView = () => {
 
                   {tasks.filter(task => !task.completed || task.approval_status === 'pending' || task.approval_status === 'rejected').length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
-                      Žádné aktivní úkoly. {(profile?.role === "employer" || userRole === "owner" || userRole === "manager") && "Vytvořte první!"}
+                      Žádné aktivní úkoly. {(globalUserRole === "employer" || userRole === "owner" || userRole === "manager") && "Vytvořte první!"}
                     </div>
                   )}
                 </div>
@@ -423,7 +423,7 @@ const TeamView = () => {
                         assignedTo={task.assigned_to}
                         approvalStatus={task.approval_status}
                         canComplete={false}
-                        canDelete={profile?.role === "employer" || userRole === "owner" || userRole === "manager"}
+                        canDelete={globalUserRole === "employer" || userRole === "owner" || userRole === "manager"}
                         canApprove={false}
                         onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
                         onDelete={() => handleDeleteTask(task.id)}
@@ -442,7 +442,7 @@ const TeamView = () => {
           </TabsContent>
 
 
-          {(profile?.role === "employer" || userRole === "owner") && (
+          {(globalUserRole === "employer" || userRole === "owner") && (
             <TabsContent value="members" className="mt-6">
               <TeamMembersManager
                 members={teamMembers}

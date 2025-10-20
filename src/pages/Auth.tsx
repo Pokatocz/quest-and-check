@@ -8,6 +8,35 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Sparkles, UserCircle } from "lucide-react";
+import { z } from "zod";
+
+// Validation schemas
+const loginSchema = z.object({
+  email: z.string()
+    .trim()
+    .email('Neplatný formát emailu')
+    .max(255, 'Email je příliš dlouhý'),
+  password: z.string()
+    .min(1, 'Heslo je povinné')
+});
+
+const signupSchema = z.object({
+  email: z.string()
+    .trim()
+    .email('Neplatný formát emailu')
+    .max(255, 'Email je příliš dlouhý'),
+  password: z.string()
+    .min(8, 'Heslo musí mít alespoň 8 znaků')
+    .max(128, 'Heslo je příliš dlouhé')
+    .regex(/[A-Z]/, 'Heslo musí obsahovat velké písmeno')
+    .regex(/[a-z]/, 'Heslo musí obsahovat malé písmeno')
+    .regex(/[0-9]/, 'Heslo musí obsahovat číslo'),
+  fullName: z.string()
+    .trim()
+    .min(2, 'Jméno je příliš krátké')
+    .max(100, 'Jméno je příliš dlouhé')
+    .regex(/^[a-zA-ZáčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\s'-]+$/, 'Jméno obsahuje neplatné znaky')
+});
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,9 +53,17 @@ const Auth = () => {
 
     try {
       if (isLogin) {
+        // Validate login input
+        const validated = loginSchema.safeParse({ email, password });
+        if (!validated.success) {
+          toast.error(validated.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: validated.data.email,
+          password: validated.data.password,
         });
         
         if (error) throw error;
@@ -34,10 +71,18 @@ const Auth = () => {
         toast.success("Přihlášení úspěšné!");
         navigate("/");
       } else {
+        // Validate signup input
+        const validated = signupSchema.safeParse({ email, password, fullName });
+        if (!validated.success) {
+          toast.error(validated.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
+
         // Sign up
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
+          email: validated.data.email,
+          password: validated.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -46,22 +91,32 @@ const Auth = () => {
         if (authError) throw authError;
         if (!authData.user) throw new Error("Registrace selhala");
 
-        // Create profile
+        // Create profile (without role - role is now in user_roles table)
         const { error: profileError } = await supabase
           .from("profiles")
           .insert({
             id: authData.user.id,
-            full_name: fullName,
-            role: role,
+            full_name: validated.data.fullName,
           });
 
         if (profileError) throw profileError;
+
+        // Note: user_roles will be populated by the handle_profile_role_assignment trigger
+        // which reads from the profiles table. Since we removed the role column,
+        // we need to insert directly into user_roles
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: authData.user.id,
+            role: role,
+          });
+
+        if (roleError) throw roleError;
 
         toast.success("Účet vytvořen! Přihlašuji...");
         navigate("/");
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
       toast.error(error.message || "Chyba při autentizaci");
     } finally {
       setLoading(false);
@@ -156,8 +211,12 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                minLength={6}
               />
+              {!isLogin && (
+                <p className="text-xs text-muted-foreground">
+                  Min. 8 znaků, velké a malé písmeno, číslo
+                </p>
+              )}
             </div>
 
             <Button

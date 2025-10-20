@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Target, TrendingUp, CheckCircle, Plus, ArrowLeft, Settings, Trophy, ListTodo, Users } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 const TeamView = () => {
   const { teamId } = useParams();
@@ -124,15 +125,67 @@ const TeamView = () => {
   const createTask = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Input validation schema
+    const taskSchema = z.object({
+      title: z.string()
+        .trim()
+        .min(1, 'Název úkolu je povinný')
+        .max(200, 'Název je příliš dlouhý (max 200 znaků)'),
+      description: z.string()
+        .trim()
+        .max(2000, 'Popis je příliš dlouhý (max 2000 znaků)')
+        .optional()
+        .or(z.literal('')),
+      xp: z.number()
+        .int('XP musí být celé číslo')
+        .min(0, 'XP nemůže být záporné')
+        .max(10000, 'XP je příliš vysoké (max 10000)'),
+      location: z.string()
+        .trim()
+        .max(500, 'Lokace je příliš dlouhá (max 500 znaků)')
+        .optional()
+        .or(z.literal('')),
+      assignedTo: z.string().uuid('Neplatné ID uživatele').nullable()
+    });
+
+    // Validate input
+    const validated = taskSchema.safeParse({
+      title: newTask.title,
+      description: newTask.description || '',
+      xp: newTask.xp,
+      location: newTask.location || '',
+      assignedTo: newTask.assignedTo || null
+    });
+
+    if (!validated.success) {
+      toast.error(validated.error.errors[0].message);
+      return;
+    }
+
+    // Verify assigned user is team member if specified
+    if (validated.data.assignedTo) {
+      const { data: isMember } = await supabase
+        .from('team_members')
+        .select('id')
+        .eq('team_id', teamId)
+        .eq('user_id', validated.data.assignedTo)
+        .single();
+        
+      if (!isMember) {
+        toast.error('Vybraný uživatel není členem týmu');
+        return;
+      }
+    }
+    
     const { error } = await supabase
       .from("tasks")
       .insert({
         team_id: teamId,
-        title: newTask.title,
-        description: newTask.description,
-        xp: newTask.xp,
-        location: newTask.location || null,
-        assigned_to: newTask.assignedTo || null,
+        title: validated.data.title,
+        description: validated.data.description || null,
+        xp: validated.data.xp,
+        location: validated.data.location || null,
+        assigned_to: validated.data.assignedTo,
         created_by: user?.id,
       });
 

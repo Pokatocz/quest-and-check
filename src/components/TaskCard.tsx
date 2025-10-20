@@ -23,18 +23,27 @@ interface TaskCardProps {
   photoUrl?: string | null;
   location?: string | null;
   assignedTo?: string | null;
+  reservedBy?: string | null;
+  reservedAt?: string | null;
   approvalStatus?: string;
   canComplete: boolean;
   canDelete?: boolean;
   canApprove?: boolean;
+  canReserve?: boolean;
   onComplete: (photoUrl: string) => void;
   onDelete?: () => void;
   onApprove?: (taskId: string, approved: boolean) => void;
+  onReserve?: (taskId: string) => void;
+  onRelease?: (taskId: string) => void;
+  currentUserId?: string;
+  reservedByName?: string;
 }
 
 export const TaskCard = ({ 
   id, title, description, xp, completed, photoUrl, location, assignedTo, 
-  approvalStatus, canComplete, canDelete, canApprove, onComplete, onDelete, onApprove 
+  reservedBy, reservedAt, approvalStatus, canComplete, canDelete, canApprove, 
+  canReserve, onComplete, onDelete, onApprove, onReserve, onRelease, 
+  currentUserId, reservedByName
 }: TaskCardProps) => {
   const [uploading, setUploading] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
@@ -163,7 +172,18 @@ export const TaskCard = ({
   };
 
   const getStatusBadge = () => {
-    if (!completed) return null;
+    if (!completed) {
+      // Show reservation status for incomplete tasks
+      if (reservedBy) {
+        const isReservedByCurrentUser = reservedBy === currentUserId;
+        return (
+          <Badge variant={isReservedByCurrentUser ? "default" : "secondary"}>
+            🔒 {isReservedByCurrentUser ? "Vaše rezervace" : `Zamluveno: ${reservedByName || 'Neznámý'}`}
+          </Badge>
+        );
+      }
+      return null;
+    }
     
     switch (approvalStatus) {
       case 'pending':
@@ -212,7 +232,31 @@ export const TaskCard = ({
               
               {getStatusBadge()}
 
-              {canComplete && !completed && (
+              {canReserve && !completed && !reservedBy && onReserve && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onReserve(id)}
+                  className="cursor-pointer"
+                >
+                  🔒 Zamluvit si
+                </Button>
+              )}
+
+              {canReserve && !completed && reservedBy === currentUserId && onRelease && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onRelease(id)}
+                  className="cursor-pointer"
+                >
+                  🔓 Uvolnit
+                </Button>
+              )}
+
+              {canComplete && !completed && (reservedBy === currentUserId || !reservedBy) && (
                 <Button
                   type="button"
                   size="sm"
@@ -356,6 +400,7 @@ export const TaskCard = ({
               <input
                 type="file"
                 accept="image/*"
+                capture="environment"
                 multiple
                 onChange={handleFileSelect}
                 disabled={uploading}
@@ -365,7 +410,7 @@ export const TaskCard = ({
               <label htmlFor={`file-upload-${id}`} className="cursor-pointer">
                 <Upload className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm font-medium">
-                  Klikněte pro nahrání fotek
+                  Klikněte pro vyfocení nebo nahrání fotek
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Minimálně 3 fotky jsou vyžadovány

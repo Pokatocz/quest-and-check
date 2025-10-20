@@ -208,6 +208,7 @@ const TeamView = () => {
         completed_by: user?.id,
         photo_url: photoUrl,
         completed_at: new Date().toISOString(),
+        approval_status: 'pending'
       })
       .eq("id", taskId);
 
@@ -216,6 +217,42 @@ const TeamView = () => {
       return;
     }
 
+    fetchTasks();
+  };
+
+  const handleReserveTask = async (taskId: string) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        reserved_by: user?.id,
+        reserved_at: new Date().toISOString()
+      })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Chyba při zamluvení úkolu");
+      return;
+    }
+
+    toast.success("Úkol zamluven!");
+    fetchTasks();
+  };
+
+  const handleReleaseTask = async (taskId: string) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        reserved_by: null,
+        reserved_at: null
+      })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Chyba při uvolnění úkolu");
+      return;
+    }
+
+    toast.success("Úkol uvolněn!");
     fetchTasks();
   };
 
@@ -440,13 +477,20 @@ const TeamView = () => {
                         photoUrl={task.photo_url}
                         location={task.location}
                         assignedTo={task.assigned_to}
+                        reservedBy={task.reserved_by}
+                        reservedAt={task.reserved_at}
+                        reservedByName={teamMembers.find((m: any) => m.user_id === task.reserved_by)?.profiles?.full_name}
                         approvalStatus={task.approval_status}
                         canComplete={globalUserRole === "employee" && !task.completed}
                         canDelete={globalUserRole === "employer" || userRole === "owner" || userRole === "manager"}
                         canApprove={(globalUserRole === "employer" || userRole === "owner" || userRole === "manager") && task.completed}
+                        canReserve={globalUserRole === "employee" && !task.completed}
                         onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
                         onDelete={() => handleDeleteTask(task.id)}
                         onApprove={handleApproveTask}
+                        onReserve={handleReserveTask}
+                        onRelease={handleReleaseTask}
+                        currentUserId={user?.id}
                       />
                     ))}
 
@@ -474,13 +518,18 @@ const TeamView = () => {
                         photoUrl={task.photo_url}
                         location={task.location}
                         assignedTo={task.assigned_to}
+                        reservedBy={task.reserved_by}
+                        reservedAt={task.reserved_at}
+                        reservedByName={teamMembers.find((m: any) => m.user_id === task.reserved_by)?.profiles?.full_name}
                         approvalStatus={task.approval_status}
                         canComplete={false}
                         canDelete={globalUserRole === "employer" || userRole === "owner" || userRole === "manager"}
                         canApprove={false}
+                        canReserve={false}
                         onComplete={(photoUrl) => handleCompleteTask(task.id, photoUrl)}
                         onDelete={() => handleDeleteTask(task.id)}
                         onApprove={handleApproveTask}
+                        currentUserId={user?.id}
                       />
                     ))}
 

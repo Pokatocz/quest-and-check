@@ -45,6 +45,8 @@ export type Database = {
           id: string
           location: string | null
           photo_url: string | null
+          reserved_at: string | null
+          reserved_by: string | null
           team_id: string
           title: string
           xp: number
@@ -61,6 +63,8 @@ export type Database = {
           id?: string
           location?: string | null
           photo_url?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
           team_id: string
           title: string
           xp?: number
@@ -77,6 +81,8 @@ export type Database = {
           id?: string
           location?: string | null
           photo_url?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
           team_id?: string
           title?: string
           xp?: number

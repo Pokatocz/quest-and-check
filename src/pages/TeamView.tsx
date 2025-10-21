@@ -373,7 +373,7 @@ const TeamView = () => {
         )}
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className={globalUserRole === "employee" ? "grid w-full grid-cols-3" : "grid w-full grid-cols-4"}>
+          <TabsList className={globalUserRole === "employee" ? "grid w-full grid-cols-4" : "grid w-full grid-cols-4"}>
             <TabsTrigger value="tasks">
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
@@ -386,6 +386,12 @@ const TeamView = () => {
               <Settings className="w-4 h-4 mr-2" />
               Nastavení
             </TabsTrigger>
+            {globalUserRole === "employee" && (
+              <TabsTrigger value="leaderboard">
+                <Trophy className="w-4 h-4 mr-2" />
+                Žebříček
+              </TabsTrigger>
+            )}
             {(globalUserRole === "employer" || userRole === "owner") && (
               <TabsTrigger value="members">
                 <Users className="w-4 h-4 mr-2" />
@@ -586,6 +592,12 @@ const TeamView = () => {
             />
           </TabsContent>
 
+          {globalUserRole === "employee" && (
+            <TabsContent value="leaderboard" className="mt-6">
+              <Leaderboard teamId={teamId!} />
+            </TabsContent>
+          )}
+
           {(globalUserRole === "employer" || userRole === "owner") && (
             <TabsContent value="members" className="mt-6">
               <TeamMembersManager
@@ -599,18 +611,14 @@ const TeamView = () => {
         </Tabs>
 
         {globalUserRole === "employee" && (
-          <>
-            <div className="grid grid-cols-1 gap-4">
-              <StatsCard
-                title="Celkem odměn"
-                value={`${userStats.xp} Kč`}
-                icon={Trophy}
-                gradient
-              />
-            </div>
-
-            <Leaderboard teamId={teamId!} />
-          </>
+          <div className="grid grid-cols-1 gap-4">
+            <StatsCard
+              title="Celkem odměn"
+              value={`${userStats.xp} Kč`}
+              icon={Trophy}
+              gradient
+            />
+          </div>
         )}
       </div>
     </div>

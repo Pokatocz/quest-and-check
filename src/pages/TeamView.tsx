@@ -586,15 +586,6 @@ const TeamView = () => {
             </TabsContent>
           )}
         </Tabs>
-
-        <div className="grid grid-cols-1 gap-4">
-          <StatsCard
-            title="Celkem odměn"
-            value={`${userStats.xp} Kč`}
-            icon={Trophy}
-            gradient
-          />
-        </div>
       </div>
     </div>
   );

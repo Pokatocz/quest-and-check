@@ -45,6 +45,7 @@ const TeamView = () => {
       fetchTeamMembers();
       fetchUserRole();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId, user]);
 
   const fetchTeamData = async () => {

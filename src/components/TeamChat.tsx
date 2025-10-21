@@ -30,12 +30,10 @@ const generateSignedUrl = async (photoUrl: string | null): Promise<string | null
   if (!photoUrl) return null;
   
   try {
-    const urlParts = photoUrl.split('/');
-    const filePath = urlParts[urlParts.length - 1];
-    
+    // photoUrl is already the file path (e.g., "userId/timestamp.jpg")
     const { data, error } = await supabase.storage
       .from('chat-photos')
-      .createSignedUrl(filePath, 3600);
+      .createSignedUrl(photoUrl, 3600);
     
     if (error) {
       console.error('Error generating signed URL:', error);
@@ -65,8 +63,10 @@ export const TeamChat = ({ teamId, currentUserId }: TeamChatProps) => {
   };
 
   useEffect(() => {
-    fetchMessages();
-    scrollToBottom();
+    if (teamId) {
+      fetchMessages();
+      scrollToBottom();
+    }
   }, [teamId]);
 
   useEffect(() => {
@@ -119,8 +119,11 @@ export const TeamChat = ({ teamId, currentUserId }: TeamChatProps) => {
         setSignedUrls(prev => ({ ...prev, ...urls }));
       }
     };
-    loadSignedUrls();
-  }, [messages]);
+    
+    if (messages.length > 0) {
+      loadSignedUrls();
+    }
+  }, [messages, signedUrls]);
 
   const fetchMessages = async () => {
     const { data, error } = await supabase

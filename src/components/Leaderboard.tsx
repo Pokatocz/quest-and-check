@@ -20,7 +20,10 @@ export const Leaderboard = ({ teamId }: LeaderboardProps) => {
   const [rewards, setRewards] = useState({ first: 0, second: 0, third: 0 });
 
   useEffect(() => {
-    fetchLeaderboard();
+    if (teamId) {
+      fetchLeaderboard();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);
 
   const fetchLeaderboard = async () => {
@@ -39,12 +42,13 @@ export const Leaderboard = ({ teamId }: LeaderboardProps) => {
       });
     }
 
-    // Fetch all tasks for this team
+    // Fetch all approved tasks for this team
     const { data: tasks } = await supabase
       .from("tasks")
-      .select("completed_by, xp, completed")
+      .select("completed_by, xp, completed, approval_status")
       .eq("team_id", teamId)
-      .eq("completed", true);
+      .eq("completed", true)
+      .eq("approval_status", "approved");
 
     if (!tasks) return;
 

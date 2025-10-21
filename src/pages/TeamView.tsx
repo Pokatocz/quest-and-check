@@ -335,42 +335,19 @@ const TeamView = () => {
           />
         )}
 
-        {globalUserRole === "employee" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <StatsCard
-              title="Aktivní úkoly"
-              value={totalTasks - completedTasks}
-              icon={Target}
-              gradient
-            />
-            <StatsCard
-              title="Dokončené"
-              value={completedTasks}
-              icon={CheckCircle}
-            />
-          </div>
-        )}
-
-        {globalUserRole === "employer" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatsCard
-              title="Aktivní úkoly"
-              value={totalTasks - completedTasks}
-              icon={Target}
-              gradient
-            />
-            <StatsCard
-              title="Dokončené"
-              value={completedTasks}
-              icon={CheckCircle}
-            />
-            <StatsCard
-              title="Celkem odměn"
-              value={`${userStats.xp} Kč`}
-              icon={Trophy}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatsCard
+            title="Aktivní úkoly"
+            value={totalTasks - completedTasks}
+            icon={Target}
+            gradient
+          />
+          <StatsCard
+            title="Dokončené"
+            value={completedTasks}
+            icon={CheckCircle}
+          />
+        </div>
 
         <Tabs defaultValue="tasks" className="w-full">
           <TabsList className={globalUserRole === "employee" ? "grid w-full grid-cols-4" : "grid w-full grid-cols-4"}>
@@ -610,16 +587,14 @@ const TeamView = () => {
           )}
         </Tabs>
 
-        {globalUserRole === "employee" && (
-          <div className="grid grid-cols-1 gap-4">
-            <StatsCard
-              title="Celkem odměn"
-              value={`${userStats.xp} Kč`}
-              icon={Trophy}
-              gradient
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 gap-4">
+          <StatsCard
+            title="Celkem odměn"
+            value={`${userStats.xp} Kč`}
+            icon={Trophy}
+            gradient
+          />
+        </div>
       </div>
     </div>
   );

@@ -335,27 +335,45 @@ const TeamView = () => {
           />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatsCard
-            title="Aktivní úkoly"
-            value={totalTasks - completedTasks}
-            icon={Target}
-            gradient
-          />
-          <StatsCard
-            title="Dokončené"
-            value={completedTasks}
-            icon={CheckCircle}
-          />
-          <StatsCard
-            title="Celkem odměn"
-            value={`${userStats.xp} Kč`}
-            icon={Trophy}
-          />
-        </div>
+        {globalUserRole === "employee" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <StatsCard
+              title="Aktivní úkoly"
+              value={totalTasks - completedTasks}
+              icon={Target}
+              gradient
+            />
+            <StatsCard
+              title="Dokončené"
+              value={completedTasks}
+              icon={CheckCircle}
+            />
+          </div>
+        )}
+
+        {globalUserRole === "employer" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <StatsCard
+              title="Aktivní úkoly"
+              value={totalTasks - completedTasks}
+              icon={Target}
+              gradient
+            />
+            <StatsCard
+              title="Dokončené"
+              value={completedTasks}
+              icon={CheckCircle}
+            />
+            <StatsCard
+              title="Celkem odměn"
+              value={`${userStats.xp} Kč`}
+              icon={Trophy}
+            />
+          </div>
+        )}
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={globalUserRole === "employee" ? "grid w-full grid-cols-3" : "grid w-full grid-cols-4"}>
             <TabsTrigger value="tasks">
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
@@ -364,16 +382,16 @@ const TeamView = () => {
               <MessageSquare className="w-4 h-4 mr-2" />
               Chat
             </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-2" />
+              Nastavení
+            </TabsTrigger>
             {(globalUserRole === "employer" || userRole === "owner") && (
               <TabsTrigger value="members">
                 <Users className="w-4 h-4 mr-2" />
                 Členové
               </TabsTrigger>
             )}
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Nastavení
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tasks" className="space-y-4 mt-6">
@@ -553,17 +571,6 @@ const TeamView = () => {
             <TeamChat teamId={teamId!} currentUserId={user?.id!} />
           </TabsContent>
 
-          {(globalUserRole === "employer" || userRole === "owner") && (
-            <TabsContent value="members" className="mt-6">
-              <TeamMembersManager
-                members={teamMembers}
-                isOwner={userRole === "owner"}
-                currentUserId={user?.id}
-                onToggleManager={handleToggleManager}
-              />
-            </TabsContent>
-          )}
-
           <TabsContent value="settings" className="mt-6">
             <TeamSettings
               teamId={teamId!}
@@ -578,7 +585,33 @@ const TeamView = () => {
               }}
             />
           </TabsContent>
+
+          {(globalUserRole === "employer" || userRole === "owner") && (
+            <TabsContent value="members" className="mt-6">
+              <TeamMembersManager
+                members={teamMembers}
+                isOwner={userRole === "owner"}
+                currentUserId={user?.id}
+                onToggleManager={handleToggleManager}
+              />
+            </TabsContent>
+          )}
         </Tabs>
+
+        {globalUserRole === "employee" && (
+          <>
+            <div className="grid grid-cols-1 gap-4">
+              <StatsCard
+                title="Celkem odměn"
+                value={`${userStats.xp} Kč`}
+                icon={Trophy}
+                gradient
+              />
+            </div>
+
+            <Leaderboard teamId={teamId!} />
+          </>
+        )}
       </div>
     </div>
   );

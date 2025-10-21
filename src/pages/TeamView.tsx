@@ -8,6 +8,7 @@ import { StatsCard } from "@/components/StatsCard";
 import { Leaderboard } from "@/components/Leaderboard";
 import { TeamSettings } from "@/components/TeamSettings";
 import { TeamMembersManager } from "@/components/TeamMembersManager";
+import { TeamChat } from "@/components/TeamChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Target, TrendingUp, CheckCircle, Plus, ArrowLeft, Settings, Trophy, ListTodo, Users } from "lucide-react";
+import { Target, TrendingUp, CheckCircle, Plus, ArrowLeft, Settings, Trophy, ListTodo, Users, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -354,10 +355,14 @@ const TeamView = () => {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
+            </TabsTrigger>
+            <TabsTrigger value="chat">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Chat
             </TabsTrigger>
             {(globalUserRole === "employer" || userRole === "owner") && (
               <TabsTrigger value="members">
@@ -543,6 +548,10 @@ const TeamView = () => {
             </Tabs>
           </TabsContent>
 
+
+          <TabsContent value="chat" className="mt-6">
+            <TeamChat teamId={teamId!} currentUserId={user?.id!} />
+          </TabsContent>
 
           {(globalUserRole === "employer" || userRole === "owner") && (
             <TabsContent value="members" className="mt-6">

@@ -22,6 +22,27 @@ export const Leaderboard = ({ teamId }: LeaderboardProps) => {
   useEffect(() => {
     if (teamId) {
       fetchLeaderboard();
+
+      // Realtime subscription for tasks
+      const channel = supabase
+        .channel(`tasks-leaderboard-${teamId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'tasks',
+            filter: `team_id=eq.${teamId}`
+          },
+          () => {
+            fetchLeaderboard();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);

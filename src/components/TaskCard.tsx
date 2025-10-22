@@ -64,9 +64,6 @@ export const TaskCard = ({
     }
   })() : [];
 
-  console.log("Photo data from DB:", photoUrl);
-  console.log("Parsed photo paths:", photoPaths);
-
   // Generate signed URLs for viewing photos
   const generateSignedUrls = async () => {
     if (photoPaths.length === 0 || loadingUrls) return;

@@ -20,7 +20,46 @@ export const TeamDashboard = ({ onTeamSelect }: { onTeamSelect: (teamId: string)
   useEffect(() => {
     if (user) {
       fetchTeams();
+
+      // Realtime subscription for teams
+      const teamsChannel = supabase
+        .channel('teams-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'teams'
+          },
+          () => {
+            fetchTeams();
+          }
+        )
+        .subscribe();
+
+      // Realtime subscription for team memberships
+      const membersChannel = supabase
+        .channel('team-members-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'team_members',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchTeams();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(teamsChannel);
+        supabase.removeChannel(membersChannel);
+      };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchTeams = async () => {

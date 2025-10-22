@@ -44,6 +44,64 @@ const TeamView = () => {
       fetchTasks();
       fetchTeamMembers();
       fetchUserRole();
+
+      // Realtime subscription for team changes
+      const teamChannel = supabase
+        .channel(`team-${teamId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'teams',
+            filter: `id=eq.${teamId}`
+          },
+          () => {
+            fetchTeamData();
+          }
+        )
+        .subscribe();
+
+      // Realtime subscription for tasks
+      const tasksChannel = supabase
+        .channel(`tasks-${teamId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'tasks',
+            filter: `team_id=eq.${teamId}`
+          },
+          () => {
+            fetchTasks();
+          }
+        )
+        .subscribe();
+
+      // Realtime subscription for team members
+      const membersChannel = supabase
+        .channel(`team-members-${teamId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'team_members',
+            filter: `team_id=eq.${teamId}`
+          },
+          () => {
+            fetchTeamMembers();
+            fetchUserRole();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(teamChannel);
+        supabase.removeChannel(tasksChannel);
+        supabase.removeChannel(membersChannel);
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId, user]);
@@ -351,7 +409,7 @@ const TeamView = () => {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className={globalUserRole === "employee" ? "grid w-full grid-cols-4" : "grid w-full grid-cols-4"}>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">
               <ListTodo className="w-4 h-4 mr-2" />
               Úkoly
@@ -359,10 +417,6 @@ const TeamView = () => {
             <TabsTrigger value="chat">
               <MessageSquare className="w-4 h-4 mr-2" />
               Chat
-            </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Nastavení
             </TabsTrigger>
             {globalUserRole === "employee" && (
               <TabsTrigger value="leaderboard">
@@ -376,6 +430,10 @@ const TeamView = () => {
                 Členové
               </TabsTrigger>
             )}
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-2" />
+              Nastavení
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tasks" className="space-y-4 mt-6">

@@ -66,7 +66,29 @@ export const TeamChat = ({ teamId, currentUserId }: TeamChatProps) => {
     if (teamId) {
       fetchMessages();
       scrollToBottom();
+
+      // Realtime subscription for messages
+      const channel = supabase
+        .channel(`messages-${teamId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `team_id=eq.${teamId}`
+          },
+          () => {
+            fetchMessages();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);
 
   useEffect(() => {
@@ -102,6 +124,7 @@ export const TeamChat = ({ teamId, currentUserId }: TeamChatProps) => {
 
   useEffect(() => {
     scrollToBottom();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   useEffect(() => {
@@ -123,7 +146,8 @@ export const TeamChat = ({ teamId, currentUserId }: TeamChatProps) => {
     if (messages.length > 0) {
       loadSignedUrls();
     }
-  }, [messages, signedUrls]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const fetchMessages = async () => {
     const { data, error } = await supabase

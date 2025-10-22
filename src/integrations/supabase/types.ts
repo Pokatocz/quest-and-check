@@ -259,10 +259,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_join_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_join_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -274,26 +271,14 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_employer: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      is_employer: { Args: { user_id: string }; Returns: boolean }
       is_team_manager: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
-      is_team_member: {
-        Args: { _team_id: string }
-        Returns: boolean
-      }
-      is_team_owner: {
-        Args: { _team_id: string }
-        Returns: boolean
-      }
-      join_team_by_code: {
-        Args: { _join_code: string }
-        Returns: Json
-      }
+      is_team_member: { Args: { _team_id: string }; Returns: boolean }
+      is_team_owner: { Args: { _team_id: string }; Returns: boolean }
+      join_team_by_code: { Args: { _join_code: string }; Returns: Json }
     }
     Enums: {
       user_role: "employer" | "employee"
